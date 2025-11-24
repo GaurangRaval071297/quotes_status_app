@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../Services/Firebase_Service.dart';
+import '../services/firebase_service.dart';
 import '../models/category.dart';
 import 'quotes_screen.dart';
 
@@ -36,6 +36,22 @@ class CategoryScreen extends StatelessWidget {
           }
 
           final categories = snapshot.data ?? [];
+
+          if (categories.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('No categories found'),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () => firebaseService.initializeData(),
+                    child: const Text('Initialize Data'),
+                  ),
+                ],
+              ),
+            );
+          }
 
           return GridView.builder(
             padding: const EdgeInsets.all(16),
@@ -90,10 +106,31 @@ class CategoryCard extends StatelessWidget {
                   category.imageUrl,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: Colors.grey[200],
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      ),
+                    );
+                  },
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
                       color: Colors.grey[300],
-                      child: const Icon(Icons.image, size: 50),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.image, size: 50, color: Colors.grey),
+                          SizedBox(height: 8),
+                          Text('No Image', style: TextStyle(color: Colors.grey)),
+                        ],
+                      ),
                     );
                   },
                 ),

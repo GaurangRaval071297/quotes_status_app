@@ -1,14 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:quotes_status_app/Models/quotes.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:http/http.dart' as http;
-import 'package:permission_handler/permission_handler.dart';
 import '../services/firebase_service.dart';
+import '../models/quotes.dart';
 
 class QuoteCard extends StatelessWidget {
   final Quotes quote;
@@ -17,45 +12,24 @@ class QuoteCard extends StatelessWidget {
 
   Future<void> _downloadImage(BuildContext context) async {
     try {
-      // Request storage permission - Updated for Android 13+
-      final status = await Permission.photos.request();
-
-      if (!status.isGranted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Storage permission required')),
-        );
-        return;
-      }
-
       // Download image
       final response = await http.get(Uri.parse(quote.imageUrl));
 
       if (response.statusCode == 200) {
-        // Save image using image_gallery_saver_plus
-        final result = await ImageGallerySaverPlus.saveImage(
-          response.bodyBytes,
-          quality: 100,
-          name: "quote_${quote.id}_${DateTime.now().millisecondsSinceEpoch}",
+        // For now, we'll just share the image since gallery saving requires more setup
+        await Share.share(
+          '${quote.text}\n\nImage: ${quote.imageUrl}\n\nShared from Quotes App',
+          subject: '${quote.category} Quote',
         );
 
-        // Check result based on new return type
-        if (result['isSuccess'] == true || result['success'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Image saved to gallery!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to save image'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Image shared successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
       } else {
-        throw Exception('Failed to download image: ${response.statusCode}');
+        throw Exception('Failed to download image');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -69,33 +43,13 @@ class QuoteCard extends StatelessWidget {
 
   Future<void> _shareQuote(BuildContext context) async {
     try {
-      // Download image first for sharing
-      final response = await http.get(Uri.parse(quote.imageUrl));
-
-      if (response.statusCode == 200) {
-        // Create temporary file path for sharing
-        final tempDir = await getTemporaryDirectory();
-        final file = File('${tempDir.path}/quote_${quote.id}.jpg');
-        await file.writeAsBytes(response.bodyBytes);
-
-        // Share with image
-        await Share.shareFiles(
-          [file.path],
-          text: '${quote.text}\n\nShared from Quotes App',
-          subject: '${quote.category} Quote',
-        );
-      } else {
-        // Share without image if download fails
-        await Share.share(
-          '${quote.text}\n\nShared from Quotes App',
-          subject: '${quote.category} Quote',
-        );
-      }
-    } catch (e) {
-      // Fallback: Share text only
       await Share.share(
         '${quote.text}\n\nShared from Quotes App',
         subject: '${quote.category} Quote',
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error sharing: $e')),
       );
     }
   }
@@ -143,15 +97,12 @@ class QuoteCard extends StatelessWidget {
                 return Container(
                   height: 200,
                   color: Colors.grey[300],
-                  child: Column(
+                  child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.image_not_supported, size: 50, color: Colors.grey[600]),
+                      Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
                       SizedBox(height: 8),
-                      Text(
-                        'Image not available',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
+                      Text('Image not available', style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                 );
@@ -206,7 +157,7 @@ class QuoteCard extends StatelessWidget {
             ),
           ),
 
-          // Quote ID and Category (for deletion reference)
+          // Quote ID and Category
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(

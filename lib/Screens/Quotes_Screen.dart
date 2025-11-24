@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../Models/quotes.dart';
-import '../Services/Firebase_Service.dart';
-import '../Widgets/Quote_Card.dart';
-
-
+import '../models/quotes.dart';
+import '../services/firebase_service.dart';
+import '../widgets/quote_card.dart';
 
 class QuotesScreen extends StatefulWidget {
   final String category;
@@ -55,9 +53,9 @@ class _QuotesScreenState extends State<QuotesScreen> {
   void _confirmDelete() {
     final quoteId = _deleteController.text.trim();
     if (quoteId.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter a quote ID')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a quote ID')),
+      );
       return;
     }
 
@@ -85,10 +83,7 @@ class _QuotesScreenState extends State<QuotesScreen> {
   }
 
   void _deleteQuote(String quoteId) async {
-    final firebaseService = Provider.of<FirebaseService>(
-      context,
-      listen: false,
-    );
+    final firebaseService = Provider.of<FirebaseService>(context, listen: false);
 
     try {
       await firebaseService.deleteQuote(quoteId);
@@ -99,9 +94,9 @@ class _QuotesScreenState extends State<QuotesScreen> {
         SnackBar(content: Text('Quote $quoteId deleted successfully!')),
       );
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error deleting quote: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting quote: $e')),
+      );
     }
   }
 
@@ -133,22 +128,35 @@ class _QuotesScreenState extends State<QuotesScreen> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          final quotes = snapshot.data ?? [];
+          final quotes12 = snapshot.data ?? [];
 
-          if (quotes.isEmpty) {
-            return const Center(
-              child: Text(
-                'No quotes available for this category',
-                style: TextStyle(fontSize: 18),
+          if (quotes12.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.quiz, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No quotes available for this category',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () => firebaseService.initializeData(),
+                    child: const Text('Load Sample Quotes'),
+                  ),
+                ],
               ),
             );
           }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: quotes.length,
+            itemCount: quotes12.length,
             itemBuilder: (context, index) {
-              final quote = quotes[index];
+              final quote = quotes12[index]; // This is now guaranteed to be a Quotes object
               return QuoteCard(quote: quote);
             },
           );

@@ -1,15 +1,15 @@
 class Quotes {
   final String id;
   final String text;
-  final String imageUrl;
   final String category;
+  final String imageUrl;
   final int likes;
 
   Quotes({
     required this.id,
     required this.text,
-    required this.imageUrl,
     required this.category,
+    required this.imageUrl,
     required this.likes,
   });
 
@@ -17,18 +17,9 @@ class Quotes {
     return Quotes(
       id: id,
       text: data['text'] ?? '',
-      imageUrl: data['imageUrl'] ?? '',
       category: data['category'] ?? '',
+      imageUrl: data['imageUrl'] ?? '',
       likes: data['likes'] ?? 0,
     );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'text': text,
-      'imageUrl': imageUrl,
-      'category': category,
-      'likes': likes,
-    };
   }
 }
