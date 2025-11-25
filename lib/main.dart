@@ -23,6 +23,7 @@ class QuotesApp extends StatelessWidget {
         title: 'Quotes For Every MOOD!',
         theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
         home: const MainScreen(),
+        debugShowCheckedModeBanner: false,
       ),
     );
   }

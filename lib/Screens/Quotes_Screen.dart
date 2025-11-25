@@ -15,6 +15,7 @@ class QuotesScreen extends StatefulWidget {
 
 class _QuotesScreenState extends State<QuotesScreen> {
   final TextEditingController _deleteController = TextEditingController();
+  bool _isLoading = false;
 
   void _showDeleteDialog() {
     showDialog(
@@ -63,19 +64,19 @@ class _QuotesScreenState extends State<QuotesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Deletion'),
-        content: Text('Are you sure you want to delete quote $quoteId? (Y/N)'),
+        content: Text('Are you sure you want to delete quote $quoteId?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('No'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context); // Close confirmation dialog
+              Navigator.pop(context);
               _deleteQuote(quoteId);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Yes', style: TextStyle(color: Colors.white)),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -83,12 +84,16 @@ class _QuotesScreenState extends State<QuotesScreen> {
   }
 
   void _deleteQuote(String quoteId) async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final firebaseService = Provider.of<FirebaseService>(context, listen: false);
 
     try {
       await firebaseService.deleteQuote(quoteId);
       _deleteController.clear();
-      Navigator.pop(context); // Close delete dialog
+      Navigator.pop(context);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Quote $quoteId deleted successfully!')),
@@ -97,7 +102,15 @@ class _QuotesScreenState extends State<QuotesScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error deleting quote: $e')),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
+  }
+
+  void _retryLoading() {
+    setState(() {});
   }
 
   @override
@@ -112,7 +125,7 @@ class _QuotesScreenState extends State<QuotesScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.delete),
-            onPressed: _showDeleteDialog,
+            onPressed: _isLoading ? null : _showDeleteDialog,
             tooltip: 'Delete Quote',
           ),
         ],
@@ -125,12 +138,35 @@ class _QuotesScreenState extends State<QuotesScreen> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Error loading quotes',
+                    style: TextStyle(fontSize: 18, color: Colors.red),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Error: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: _retryLoading,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
           }
 
-          final quotes12 = snapshot.data ?? [];
+          final quotes = snapshot.data ?? [];
 
-          if (quotes12.isEmpty) {
+          if (quotes.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -154,9 +190,9 @@ class _QuotesScreenState extends State<QuotesScreen> {
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: quotes12.length,
+            itemCount: quotes.length,
             itemBuilder: (context, index) {
-              final quote = quotes12[index]; // This is now guaranteed to be a Quotes object
+              final quote = quotes[index];
               return QuoteCard(quote: quote);
             },
           );

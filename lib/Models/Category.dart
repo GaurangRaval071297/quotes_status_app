@@ -9,11 +9,19 @@ class Category {
     required this.imageUrl,
   });
 
-  factory Category.fromMap(Map<String, dynamic> data, String id) {
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'imageUrl': imageUrl,
+    };
+  }
+
+  factory Category.fromMap(Map<String, dynamic> map, String id) {
     return Category(
-      id: id,
-      name: data['name'] ?? '',
-      imageUrl: data['imageUrl'] ?? '',
+      id: id, // ✅ Document ID use karen
+      name: map['name'] ?? '',
+      imageUrl: map['imageUrl'] ?? '',
     );
   }
 }
